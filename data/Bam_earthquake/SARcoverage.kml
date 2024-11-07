@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Folder><name>corners</name>
+  <Placemark>
+	<Style><LineStyle><color>ff0000ff</color></LineStyle><PolyStyle><fill>0</fill></PolyStyle></Style>
+      <LineString><coordinates>58.85370333,29.34688656 58.08296959,29.48666551 57.90938856,28.74828234 58.6740571,28.60860215 58.85370333,29.34688656</coordinates></LineString>
+  </Placemark>
+</Folder>
+</Document></kml>
