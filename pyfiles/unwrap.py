@@ -5,13 +5,13 @@
 Author: Emil Haaber Tellefsen
 Co-Authors: Linus Ravn Gudmundsson, Niels Schøtt Hvidberg
 
-Date: 09/11/2024
+Date: 12/11/2024
 """
 
 # -- Third party --
 import numpy as np
 
-def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'dfs', modulus: float = 2*np.pi):
+def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'bfs'):
     """
     Function for unwrapping the phase of a 2D image, given a reference seed as location and branch cuts defining walls
     the unwrapping is not allowed to cross.
@@ -39,20 +39,20 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
     """
 
     # Makes a copy of phase which will be used as unwrapped output
-    f_phase = np.copy(phase)
+    unwrapped_phase = np.empty(phase.shape)
     
     # Initializing branchcut array as empty if none is specified
     if branchCuts is None:
         branchCuts = np.zeros(phase.shape, dtype=bool)
 
-    # prealocating registry and stack/queue structure for book keeping
-    registry = np.zeros(phase.shape, dtype=bool)
+    # prealocating adjoin list and stack/queue structure for book keeping
+    adjoin = np.zeros(phase.shape, dtype=bool)
     structure = []
 
-    # adding seed to registry and structure
-    # tuple contains ((coord_r,coord_c), numPeriods, parentValue)
-    registry[seed[0],seed[1]]=True
-    structure.append((seed, 0, f_phase[seed[0],seed[1]]))
+    # adding seed to adjoin list and structure
+    # tuple contains ((coord_r,coord_c), parentPhase, parentValue)
+    adjoin[seed[0],seed[1]]=True
+    structure.append((seed, phase[seed[0],seed[1]], 0))
 
     while len(structure)>0:
         if mode == 'dfs':
@@ -68,44 +68,39 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
         # Extract tuple info
         r = cObject[0][0]
         c = cObject[0][1]
-        numPeriods = cObject[1]
+        parPhase = cObject[1]
         parVal = cObject[2]
 
-        # adding already unwrapped periods
-        f_phase[r,c] += numPeriods*modulus
-
-        # checking if phase difference is larger than modulus/2 and adding modulus in that case
-        phase_diff = parVal - f_phase[r,c]
-        if abs(phase_diff) > modulus/2:
-            f_phase[r,c] +=np.sign(phase_diff)*modulus
-            numPeriods+=np.sign(phase_diff)
+        # unwrapping via Itoh's method (Ghiglia and Pritt (1998) p. 21 )
+        phase_diff =  phase[r,c] - parPhase
+        wrapped_phase_diff = np.arctan2(np.sin(phase_diff),np.cos(phase_diff))
+        unwrapped_phase = parVal + wrapped_phase_diff
+        parVal = unwrapped_phase      
         
         # Checking if neigbouring pixels are valid, does not intersect branchcut and is not already registered
         for dv in [(0,-1),(0,1),(-1,0),(1,0)]:
             r_new = r+dv[0]
             c_new = c+dv[1]
-            if 0 <= r_new < f_phase.shape[0] and 0 <= c_new < f_phase.shape[1]:
+            if 0 <= r_new < phase.shape[0] and 0 <= c_new < phase.shape[1]:
                 if not branchCuts[r_new, c_new]:
-                    if not registry[r_new, c_new]:
+                    if not adjoin[r_new, c_new]:
                         # adding to stack/queue and registering
-                        structure.append(((r_new,c_new), numPeriods, f_phase[r,c]))
-                        registry[r_new,c_new] = True
+                        structure.append(((r_new,c_new), phase[r,c], parVal))
+                        adjoin[r_new,c_new] = True
     
     # Removing branchcuts and pixels not unpacked
-    f_phase[branchCuts] = np.nan   
-    f_phase[~registry] = np.nan
-    f_phase -= f_phase[seed[0],seed[1]]
-    return f_phase
+    unwrapped_phase[branchCuts] = np.nan   
+    unwrapped_phase[~adjoin] = np.nan
+    return unwrapped_phase
 
 
 
 class unWrapDisplayer:
-    def __init__(self, phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'dfs', modulus: float = 2*np.pi):
+    def __init__(self, phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'dfs'):
     # Makes a copy of phase which will be used as unwrapped output
         self.f_phase = np.copy(phase)
         self.seed = seed
         self.mode = mode
-        self.modulus = modulus
 
         # Initializing branchcut array as empty if none is specified
         if branchCuts is None:
@@ -113,15 +108,15 @@ class unWrapDisplayer:
         else:
             self.branchCuts = branchCuts
 
-        # prealocating registry and stack/queue structure for book keeping
-        self.registry = np.zeros(phase.shape, dtype=bool)
+        # prealocating adjoin and stack/queue structure for book keeping
+        self.adjoin = np.zeros(phase.shape, dtype=bool)
         self.unwrapped = np.zeros(phase.shape, dtype=bool)
         self.structure = []
 
-        # adding seed to registry and structure
+        # adding seed to adjoin and structure
         # tuple contains ((coord_r,coord_c), numPeriods, parentValue)
-        self.registry[seed[0],seed[1]]=True
-        self.structure.append((seed, 0, self.f_phase[seed[0],seed[1]]))
+        self.adjoin[seed[0],seed[1]]=True
+        self.structure.append((seed, self.f_phase[seed[0],seed[1]], 0))
     
     def update(self):
         if len(self.structure) > 0:
@@ -138,30 +133,26 @@ class unWrapDisplayer:
             # Extract tuple info
             r = cObject[0][0]
             c = cObject[0][1]
-            numPeriods = cObject[1]
+            parPhase = cObject[1]
             parVal = cObject[2]
             self.unwrapped[r,c] = True
 
-            # adding already unwrapped periods
-            self.f_phase[r,c] += numPeriods*self.modulus
-
             # checking if phase difference is larger than modulus/2 and adding modulus in that case
-            phase_diff = parVal - self.f_phase[r,c]
-            if abs(phase_diff) > self.modulus/2:
-                self.f_phase[r,c] +=np.sign(phase_diff)*self.modulus
-                numPeriods+=np.sign(phase_diff)
-            
+            phase_diff =  self.f_phase[r,c] - parPhase
+            wrapped_phase_diff = np.arctan2(np.sin(phase_diff),np.cos(phase_diff))
+            self.f_phase[r,c] = parVal + wrapped_phase_diff
+            parVal = self.f_phase[r,c]
+
             # Checking if neigbouring pixels are valid, does not intersect branchcut and is not already registered
             for dv in [(0,-1),(0,1),(-1,0),(1,0)]:
                 r_new = r+dv[0]
                 c_new = c+dv[1]
                 if 0 <= r_new < self.f_phase.shape[0] and 0 <= c_new < self.f_phase.shape[1]:
                     if not self.branchCuts[r_new, c_new]:
-                        if not self.registry[r_new, c_new]:
+                        if not self.adjoin[r_new, c_new]:
                             # adding to stack/queue and registering
-                            self.structure.append(((r_new,c_new), numPeriods, self.f_phase[r,c]))
-                            self.registry[r_new,c_new] = True   
+                            self.structure.append(((r_new,c_new), self.f_phase[r,c], parVal))
+                            self.adjoin[r_new,c_new] = True   
             return False
         else:
             return True 
-    
