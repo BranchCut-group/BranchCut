@@ -70,16 +70,15 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
                 width = size[1] - (size[1]%2 + 1)
             
             height = (width + 1) // 2
-            if loc[0]+height >= size[0]:
+            if loc[0] + np.ceil(height/2) >= size[0]:
                 height = loc[0] - size[0]
 
-            for i in range(loc[0],loc[0]+height):
-                print(i,pos-i,pos+i+1)
-                #mask[i, ] = 1
+            for i in range(height):
+                mask[loc[0]-height//2 + i, pos-i:pos+i+1] = 1
 
         case 3: # circle
             rr, cc = np.ogrid[:size[0], :size[1]]
-            circle = (rr - loc[1]) ** 2 + (cc - loc[0]) ** 2 <= (min(size) // 4) ** 2
+            circle = (rr - loc[0]) ** 2 + (cc - loc[1]) ** 2 <= (min(size) // 4) ** 2
             mask[circle] = 1
 
         case _:
