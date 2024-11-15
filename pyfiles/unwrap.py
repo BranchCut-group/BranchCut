@@ -11,7 +11,7 @@ Date: 12/11/2024
 # -- Third party --
 import numpy as np
 
-def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'bfs'):
+def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'bfs', unwrapBranchPixels: bool = True):
     """
     Function for unwrapping the phase of a 2D image, given a reference seed as location and branch cuts defining walls
     the unwrapping is not allowed to cross.
@@ -28,8 +28,8 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
         dfs or bfs; unwrapping method for which priority order unwrapping should occur in. 
             dfs is depth-first search and unwraps most resent entry in list (stack).
             bfs is breath-first search and unwraps oldest entry in list (queue).
-    modulus: float, optional
-        modulus of wrapped phase. Default is 2*pi
+    unwrapBranchPixels: bool, optional
+        Notes whether branchcut pixels should be unwrapped or not. Default is true.
 
     Returns
     -------
@@ -39,7 +39,7 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
     """
 
     # Makes a copy of phase which will be used as unwrapped output
-    unwrapped_phase = np.empty(phase.shape)
+    unwrapped_phase = np.zeros(phase.shape)*np.nan
     
     # Initializing branchcut array as empty if none is specified
     if branchCuts is None:
@@ -82,25 +82,31 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
             r_new = r+dv[0]
             c_new = c+dv[1]
             if 0 <= r_new < phase.shape[0] and 0 <= c_new < phase.shape[1]:
-                if not branchCuts[r_new, c_new]:
-                    if not adjoin[r_new, c_new]:
+                if not adjoin[r_new, c_new]:
+                    # if new and current pixel is not branch cut
+                    if not branchCuts[r_new, c_new] and not branchCuts[r, c]:
                         # adding to stack/queue and registering
                         structure.append(((r_new,c_new), phase[r,c], parVal))
                         adjoin[r_new,c_new] = True
-    
-    # Removing branchcuts and pixels not unpacked
-    unwrapped_phase[branchCuts] = np.nan   
+                    # if new pixel is branchcut but comming from right direction and current pixel is not branchcut
+                    elif unwrapBranchPixels and dv in [(0,1),(1,0)] and not branchCuts[r, c]:
+                        # adding to stack/queue and registering
+                        structure.append(((r_new,c_new), phase[r,c], parVal))
+                        adjoin[r_new,c_new] = True    
+
+    # Removing pixels not unpacked
     unwrapped_phase[~adjoin] = np.nan
     return unwrapped_phase
 
 
 
 class unWrapDisplayer:
-    def __init__(self, phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'dfs'):
+    def __init__(self, phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: str = 'dfs', unwrapBranchPixels: bool = True):
     # Makes a copy of phase which will be used as unwrapped output
         self.f_phase = np.copy(phase)
         self.seed = seed
         self.mode = mode
+        self.unwrapBranchPixels = unwrapBranchPixels
 
         # Initializing branchcut array as empty if none is specified
         if branchCuts is None:
@@ -148,11 +154,17 @@ class unWrapDisplayer:
                 r_new = r+dv[0]
                 c_new = c+dv[1]
                 if 0 <= r_new < self.f_phase.shape[0] and 0 <= c_new < self.f_phase.shape[1]:
-                    if not self.branchCuts[r_new, c_new]:
-                        if not self.adjoin[r_new, c_new]:
+                    if not self.adjoin[r_new, c_new]:
+                    # if new and current pixel is not branch cut
+                        if not self.branchCuts[r_new, c_new] and not self.branchCuts[r, c]:
                             # adding to stack/queue and registering
                             self.structure.append(((r_new,c_new), self.f_phase[r,c], parVal))
-                            self.adjoin[r_new,c_new] = True   
+                            self.adjoin[r_new,c_new] = True
+                        # if new pixel is branchcut but comming from right direction and current pixel is not branchcut
+                        elif self.unwrapBranchPixels and dv in [(0,1),(1,0)] and not self.branchCuts[r, c]:
+                            # adding to stack/queue and registering
+                            self.structure.append(((r_new,c_new), self.f_phase[r,c], parVal))
+                            self.adjoin[r_new,c_new] = True    
             return False
         else:
             return True 
