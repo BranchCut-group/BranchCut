@@ -11,7 +11,7 @@ def makephase(N, M=None):
     data = np.zeros((N,M))
     for i in range(N):
         for j in range(M):
-            data[i,j] = j*np.pi/2
+            data[i,j] = j*np.pi*0.4+i*np.pi*0.4
 
     return data
 
@@ -53,12 +53,23 @@ def addresidues(data, location, line=False, percentage=False):
             mid = data_out.shape[1]//2
             lb  = mid-row[1]//2+row[1]%2
             ub  = mid+row[1]//2
-            data_out[row[0]][lb:ub] += 2*np.pi
+            data_out[row[0]][lb:ub] += *np.pi
 
         else:
-            data_out[row[0], row[1]] += 2*np.pi
+            data_out[row[0], row[1]] += np.pi
     
     return data_out
+
+def find_residues(data):
+    # Can be parallelized
+    up      = data[:-1,1:]-data[:-1,:-1]
+    right   = data[1:,1:]-data[:-1,1:]
+    down    = data[1:,:-1]-data[1:,1:]
+    left    = data[:-1,:-1]-data[1:,:-1]
+
+    residue_map = up + right + down + left
+
+    print(residue_map)
 
 if __name__ == "__main__":
     print("This is a Goldstein Branch Cut algorithm module.")
