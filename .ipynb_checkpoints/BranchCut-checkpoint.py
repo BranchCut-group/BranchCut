@@ -29,7 +29,7 @@ def wrap(data):
     # Wrap the phase
     return (data+np.pi)%(2*np.pi) - np.pi
 
-def addresidues(data, location, line=False, percentage=False):
+def addresidues(data, location, percentage=False):
     """
     This Function add residues to a phase diagram. If line is set to True add a horizontal line with center in the given locations.
     == Input ==
@@ -49,14 +49,11 @@ def addresidues(data, location, line=False, percentage=False):
     data_out = np.copy(data)
 
     for row in location:
-        if line:
-            mid = data_out.shape[1]//2
-            lb  = mid-row[1]//2+row[1]%2
-            ub  = mid+row[1]//2
-            data_out[row[0]][lb:ub] += *np.pi
+        if row[2] == 1:
+            data_out[row[0], row[1]] += np.pi
 
         else:
-            data_out[row[0], row[1]] += np.pi
+            data_out[row[0], row[1]] -= np.pi
     
     return data_out
 
