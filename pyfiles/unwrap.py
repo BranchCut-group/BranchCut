@@ -84,15 +84,18 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
             if 0 <= r_new < phase.shape[0] and 0 <= c_new < phase.shape[1]:
                 if not adjoin[r_new, c_new]:
                     # if new and current pixel is not branch cut
-                    if not branchCuts[r_new, c_new] and not branchCuts[r, c]:
-                        # adding to stack/queue and registering
-                        structure.append(((r_new,c_new), phase[r,c], parVal))
-                        adjoin[r_new,c_new] = True
+                    if not branchCuts[r_new, c_new]:
+                        if not branchCuts[r, c]:
+                            # adding to stack/queue and registering
+                            structure.append(((r_new,c_new), phase[r,c], parVal))
+                            adjoin[r_new,c_new] = True
+                    
                     # if new pixel is branchcut but comming from right direction and current pixel is not branchcut
-                    elif unwrapBranchPixels and dv in [(0,1),(1,0)] and not branchCuts[r, c]:
-                        # adding to stack/queue and registering
-                        structure.append(((r_new,c_new), phase[r,c], parVal))
-                        adjoin[r_new,c_new] = True    
+                    elif unwrapBranchPixels and dv in [(0,1),(1,0)]:
+                        if not branchCuts[r, c] or branchCuts[r_new, c_new]:
+                            # adding to stack/queue and registering
+                            structure.append(((r_new,c_new), phase[r,c], parVal))
+                            adjoin[r_new,c_new] = True    
 
     # Removing pixels not unpacked
     unwrapped_phase[~adjoin] = np.nan
