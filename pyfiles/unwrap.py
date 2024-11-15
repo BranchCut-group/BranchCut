@@ -74,8 +74,8 @@ def unwrap(phase: np.ndarray, seed: tuple, branchCuts: np.ndarray = None, mode: 
         # unwrapping via Itoh's method (Ghiglia and Pritt (1998) p. 21 )
         phase_diff =  phase[r,c] - parPhase
         wrapped_phase_diff = np.arctan2(np.sin(phase_diff),np.cos(phase_diff))
-        unwrapped_phase = parVal + wrapped_phase_diff
-        parVal = unwrapped_phase      
+        unwrapped_phase[r,c] = parVal + wrapped_phase_diff
+        parVal = unwrapped_phase[r,c]      
         
         # Checking if neigbouring pixels are valid, does not intersect branchcut and is not already registered
         for dv in [(0,-1),(0,1),(-1,0),(1,0)]:
