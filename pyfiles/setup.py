@@ -64,8 +64,17 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
             mask[loc[0]-half_size:loc[0]+half_size, loc[1]-half_size:loc[1]+half_size] = 1
 
         case 2: # triangle
-            for i in range(loc[0],loc[0]+(loc[1])):
-                print(loc[0] - (i - loc[1]),loc[0] + (i - loc[1]))
+            pos = int(size[1]/2)
+            width = loc[1] + (loc[1]%2 - 1)
+            if width >= size[1]:
+                width = size[1] - (size[1]%2 + 1)
+            
+            height = (width + 1) // 2
+            if loc[0]+height >= size[0]:
+                height = loc[0] - size[0]
+
+            for i in range(loc[0],loc[0]+height):
+                print(i,pos-i,pos+i+1)
                 #mask[i, ] = 1
 
         case 3: # circle
