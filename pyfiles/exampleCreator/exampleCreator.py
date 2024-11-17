@@ -122,3 +122,25 @@ def createUnwrappedBaseline(shape: tuple, UnwrappedPhaseLimists: tuple, format: 
     else:
         raise ValueError('Unknown format')
 
+
+def TrueBranchCuts(phase_unwrapped: np.ndarray):
+    """
+    Creating the theoretical "True Branch Cuts" given the known unwrapped phase
+
+    Parameters
+    ----------
+    phase_unwrapped : array_like
+        (n x m) Float array with altered unwrapped phase.
+
+    Returns
+    -------
+    array_like
+        (n x m) boolean array where theoretical branchcuts are True
+    """      
+    dhorz = phase_unwrapped[:,1:] - phase_unwrapped[:,:-1]
+    dvert = phase_unwrapped[1:,:] - phase_unwrapped[:-1,:]
+    BC = np.zeros(phase_unwrapped.shape, dtype=bool)
+    BC[:,:-1][abs(dhorz)>np.pi] = True
+    BC[:-1,:][abs(dvert)>np.pi] = True
+    return BC
+
