@@ -1,5 +1,5 @@
 # This module contains the different functions for the BranchCut algorithm
-import numpy as np
+import numpy as _np
 
 
 def makephase(N, M=None):
@@ -9,10 +9,10 @@ def makephase(N, M=None):
     if M == None:
         M = N
     
-    data = np.zeros((N,M))
+    data = _np.zeros((N,M))
     for i in range(N):
         for j in range(M):
-            data[i,j] = j*np.pi*0.4+i*np.pi*0.4
+            data[i,j] = j*_np.pi*0.4+i*_np.pi*0.4
 
     return data
 
@@ -29,21 +29,21 @@ def wrap(data):
     """
 
     # Wrap the phase
-    return (data+np.pi)%(2*np.pi) - np.pi
+    return (data+_np.pi)%(2*_np.pi) - _np.pi
 
 
 def add_residues(data, location, percent=False):
-    data_out = np.copy(data)
+    data_out = _np.copy(data)
 
     if percent:
         loc = [int(loc[0] * size[0]), int(loc[1] * size[1])]
 
     for row in location:
         if row[2] == 1:
-            data_out[row[0], row[1]] += 1.2*np.pi
+            data_out[row[0], row[1]] += 1.2*_np.pi
     
         else:
-            data_out[row[0], row[1]] -= 1.2*np.pi
+            data_out[row[0], row[1]] -= 1.2*_np.pi
     
     return data_out
 
@@ -55,7 +55,7 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
     if percent:
         loc = [int(loc[0] * size[0]), int(loc[1] * size[1])]
     
-    mask = np.zeros(size, dtype=np.uint8)
+    mask = _np.zeros(size, dtype=_np.uint8)
     
     match shape:
         case 0: # line
@@ -74,14 +74,14 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
                 width = size[1] - (size[1]%2 + 1)
             
             height = (width + 1) // 2
-            if loc[0] + np.ceil(height/2) >= size[0]:
+            if loc[0] + _np.ceil(height/2) >= size[0]:
                 height = loc[0] - size[0]
 
             for i in range(height):
                 mask[loc[0]-height//2 + i, pos-i:pos+i+1] = 1
 
         case 3: # circle
-            rr, cc = np.ogrid[:size[0], :size[1]]
+            rr, cc = _np.ogrid[:size[0], :size[1]]
             circle = (rr - loc[0]) ** 2 + (cc - loc[1]) ** 2 <= (min(size) // 4) ** 2
             mask[circle] = 1
 
@@ -100,10 +100,8 @@ def find_residues(data):
     down    = data[1:,:-1]-data[1:,1:]
     left    = data[:-1,:-1]-data[1:,:-1]
 
-    return np.array((wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*np.pi),dtype="int")
+    return _np.array((wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*_np.pi),dtype="int")
 
 
 if __name__ == "__main__":
     print("This is a Goldstein Branch Cut algorithm module.")
-
-del np

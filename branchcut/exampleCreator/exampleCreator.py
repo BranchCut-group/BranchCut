@@ -142,7 +142,3 @@ def TrueBranchCuts(phase_unwrapped: np.ndarray):
     BC[:,:-1][abs(dhorz)>np.pi] = True
     BC[:-1,:][abs(dvert)>np.pi] = True
     return BC
-
-
-# -- Third party --
-del np
