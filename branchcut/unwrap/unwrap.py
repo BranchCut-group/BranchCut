@@ -171,3 +171,6 @@ class unWrapDisplayer:
             return False
         else:
             return True 
+
+
+del np

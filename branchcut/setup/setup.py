@@ -1,6 +1,7 @@
 # This module contains the different functions for the BranchCut algorithm
 import numpy as np
 
+
 def makephase(N, M=None):
     """
     This Function creates a linear increasing phase diagram of size (N x M), or (N x N) if M is not given
@@ -14,6 +15,7 @@ def makephase(N, M=None):
             data[i,j] = j*np.pi*0.4+i*np.pi*0.4
 
     return data
+
 
 def wrap(data):
     """
@@ -29,6 +31,7 @@ def wrap(data):
     # Wrap the phase
     return (data+np.pi)%(2*np.pi) - np.pi
 
+
 def add_residues(data, location, percent=False):
     data_out = np.copy(data)
 
@@ -43,6 +46,7 @@ def add_residues(data, location, percent=False):
             data_out[row[0], row[1]] -= 1.2*np.pi
     
     return data_out
+
 
 def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool = False):
     """
@@ -98,5 +102,8 @@ def find_residues(data):
 
     return np.array((wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*np.pi),dtype="int")
 
+
 if __name__ == "__main__":
     print("This is a Goldstein Branch Cut algorithm module.")
+
+del np

@@ -60,7 +60,6 @@ def createExample(unwrapped_baseline:  np.ndarray, add_image:  np.ndarray = None
     return phase_unwrapped, phase_wrapped
 
 
-
 def createUnwrappedBaseline(shape: tuple, UnwrappedPhaseLimists: tuple, format: str = 'diagonal'):
     """
     Making baseline unwrapped phase given image shape, value limits of unwrapped phase, and template format. 
@@ -144,3 +143,6 @@ def TrueBranchCuts(phase_unwrapped: np.ndarray):
     BC[:-1,:][abs(dvert)>np.pi] = True
     return BC
 
+
+# -- Third party --
+del np
