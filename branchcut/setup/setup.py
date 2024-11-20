@@ -99,9 +99,9 @@ def find_residues(data):
     right   = data[1:,1:]-data[:-1,1:]
     down    = data[1:,:-1]-data[1:,1:]
     left    = data[:-1,:-1]-data[1:,:-1]
-
-    return _np.array((wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*_np.pi),dtype="int")
-
+    out = np.zeros(data.shape,dtype=float)
+    out[:-1,:-1] = (wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*np.pi)
+    return np.round(out).astype(int)
 
 if __name__ == "__main__":
     print("This is a Goldstein Branch Cut algorithm module.")
