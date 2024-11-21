@@ -48,7 +48,7 @@ def add_residues(data, location, percent=False):
     return data_out
 
 
-def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool = False):
+def create_mask(size: list or tuple, loc: list = [0.5,0.5], shape: int = 'line', percent: bool = True):
     """
     Create a mask in the shape of a line, square, triangle, or circle.
     """
@@ -58,16 +58,16 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
     mask = _np.zeros(size, dtype=_np.uint8)
     
     match shape:
-        case 0: # line
+        case 'line':
             pos = int(size[1]/2)
             hl  = int(loc[1]/2)
-            mask[loc[0], pos-hl:pos+hl] = 1
+            mask[pos, loc[0]-hl:loc[0]+hl] = 1
 
-        case 1: # square
+        case 'square':
             half_size = min(size) // 4
             mask[loc[0]-half_size:loc[0]+half_size, loc[1]-half_size:loc[1]+half_size] = 1
 
-        case 2: # triangle
+        case 'triangle':
             pos = int(size[1]/2)
             width = loc[1] + (loc[1]%2 - 1)
             if width >= size[1]:
@@ -80,13 +80,13 @@ def create_mask(size: list, loc: list = [0.5,0.5], shape: int = 0, percent: bool
             for i in range(height):
                 mask[loc[0]-height//2 + i, pos-i:pos+i+1] = 1
 
-        case 3: # circle
+        case 'circle':
             rr, cc = _np.ogrid[:size[0], :size[1]]
             circle = (rr - loc[0]) ** 2 + (cc - loc[1]) ** 2 <= (min(size) // 4) ** 2
             mask[circle] = 1
 
         case _:
-            raise ValueError("Invalid shape. Choose from 0:line, 1:square, 2:triangle, or 3:circle.")
+            raise ValueError("Invalid shape. Choose from 'line', 'square', 'triangle', or 'circle'.")
 
     return mask
 
