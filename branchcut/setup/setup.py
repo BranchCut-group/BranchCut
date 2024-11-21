@@ -64,7 +64,7 @@ def create_mask(size: list or tuple, loc: list = [0.5,0.5], shape: int = 'line',
             mask[pos, loc[0]-hl:loc[0]+hl] = 1
 
         case 'square':
-            half_size = min(size) // 4
+            half_size = min(size) // 7
             mask[loc[0]-half_size:loc[0]+half_size, loc[1]-half_size:loc[1]+half_size] = 1
 
         case 'triangle':
@@ -82,7 +82,7 @@ def create_mask(size: list or tuple, loc: list = [0.5,0.5], shape: int = 'line',
 
         case 'circle':
             rr, cc = _np.ogrid[:size[0], :size[1]]
-            circle = (rr - loc[0]) ** 2 + (cc - loc[1]) ** 2 <= (min(size) // 4) ** 2
+            circle = (rr - loc[0]) ** 2 + (cc - loc[1]) ** 2 <= (min(size) // 6) ** 2
             mask[circle] = 1
 
         case _:
@@ -99,9 +99,9 @@ def find_residues(data):
     right   = data[1:,1:]-data[:-1,1:]
     down    = data[1:,:-1]-data[1:,1:]
     left    = data[:-1,:-1]-data[1:,:-1]
-    out = np.zeros(data.shape,dtype=float)
-    out[:-1,:-1] = (wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*np.pi)
-    return np.round(out).astype(int)
+    out = _np.zeros(data.shape,dtype=float)
+    out[:-1,:-1] = (wrap(up) + wrap(right) + wrap(down) + wrap(left))/(2*_np.pi)
+    return _np.round(out).astype(int)
 
 if __name__ == "__main__":
     print("This is a Goldstein Branch Cut algorithm module.")
