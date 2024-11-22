@@ -33,16 +33,16 @@ def line(i1,j1,i2,j2):
        1D array of column indices of pixels on line
 
     """
-    if abs(i2-i1) == abs(j2-j1):
-        if i1 > i2:
-            i1,j1,i2,j2 = i2,j2,i1,j1
-        i = np.arange(i1,i2+1)
-        if j1 > j2:
-            j = (j2-j1)/(i2-i1)*(i-i1)+j1+1
-        else:
-            j = (j2-j1)/(i2-i1)*(i-i1)+j1
+    #if abs(i2-i1) == abs(j2-j1):
+    #    if i1 > i2:
+    #        i1,j1,i2,j2 = i2,j2,i1,j1
+    #    i = np.arange(i1,i2+1)
+    #    if j1 > j2:
+    #        j = (j2-j1)/(i2-i1)*(i-i1)+j1+1
+    #    else:
+    #        j = (j2-j1)/(i2-i1)*(i-i1)+j1
                    
-    elif abs(i2-i1) >= abs(j2-j1):
+    if abs(i2-i1) >= abs(j2-j1):
         if i1 > i2:
             i1,j1,i2,j2 = i2,j2,i1,j1
         i = np.arange(i1,i2+1)
@@ -78,10 +78,13 @@ def branch_cut(residue,mask=None,max_box_size=None):
     #found_res = []
 
     if mask is None:
-        mask = np.zeros(residue.shape).astype(bool)
+        mask = np.ones(residue.shape).astype(bool)
 
     if max_box_size is None:
         max_box_size = np.min(residue.shape)
+
+    # Place branch cut pixels in masked out areas
+    branch_cuts[np.invert(mask)] = True
 
     for i in range(residue.shape[0]):
         for j in range(residue.shape[1]):
@@ -129,7 +132,7 @@ def branch_cut(residue,mask=None,max_box_size=None):
                                     branch_cuts[ia,ja+1:] = True #Right edge
                                     charge = 0
 
-                                elif mask[ib,jb]:
+                                elif not mask[ib,jb]:
                                     # Place branch cut to edge pixel
                                     i_bc,j_bc = line(ia,ja,ib,jb)
                                     branch_cuts[i_bc,j_bc] = True
