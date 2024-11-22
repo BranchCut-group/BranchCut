@@ -36,7 +36,7 @@ def line(i1,j1,i2,j2):
     if abs(i2-i1) == abs(j2-j1):
         if i1 > i2:
             i1,j1,i2,j2 = i2,j2,i1,j1
-        i = np.arange(i1+1,i2+1)
+        i = np.arange(i1,i2+1)
         if j1 > j2:
             j = (j2-j1)/(i2-i1)*(i-i1)+j1+1
         else:
@@ -45,12 +45,12 @@ def line(i1,j1,i2,j2):
     elif abs(i2-i1) >= abs(j2-j1):
         if i1 > i2:
             i1,j1,i2,j2 = i2,j2,i1,j1
-        i = np.arange(i1+1,i2+1)
+        i = np.arange(i1,i2+1)
         j = (j2-j1)/(i2-i1)*(i-i1)+j1
     else:
         if j1 > j2:
             i1,j1,i2,j2 = i2,j2,i1,j1
-        j = np.arange(j1+1,j2+1)
+        j = np.arange(j1,j2+1)
         i = (i2-i1)/(j2-j1)*(j-j1)+i1
     
     return np.ceil(i).astype(int),np.ceil(j).astype(int)
@@ -92,7 +92,7 @@ def box_search(A,i,j,box_size):
         inds += np.array([[i-r],[j-r]])
         return inds
         
-def branch_cut(residue,max_box_size=None):
+def branch_cut(residue,mask=None,max_box_size=None):
     """
     Implementation of Goldstein algorithm for placing branch cuts on a set of phase residues
 
