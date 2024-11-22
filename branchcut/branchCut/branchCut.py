@@ -54,7 +54,7 @@ def line(i1,j1,i2,j2):
         i = (i2-i1)/(j2-j1)*(j-j1)+i1
     
     return np.ceil(i).astype(int),np.ceil(j).astype(int)
-
+  
 def box_search(A,i,j,box_size):
     """
     Function for searching an n x n box around a point in a 2D array
@@ -91,7 +91,7 @@ def box_search(A,i,j,box_size):
         inds = np.array(np.nonzero(A[i-r:i+r+1,j-r:j+r+1]))
         inds += np.array([[i-r],[j-r]])
         return inds
-        
+     
 def branch_cut(residue,mask=None,max_box_size=None):
     """
     Implementation of Goldstein algorithm for placing branch cuts on a set of phase residues
