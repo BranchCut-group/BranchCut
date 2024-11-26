@@ -30,76 +30,41 @@ def line(i1,j1,i2,j2):
     i : array_like
        1D array of row indices of pixels on line
     j : array_like
-        1D array of column indices of pixels on line
+       1D array of column indices of pixels on line
 
     """
-    if abs(i2-i1) == abs(j2-j1):
-        if i1 > i2:
-            i1,j1,i2,j2 = i2,j2,i1,j1
-        i = np.arange(i1+1,i2+1)
-        if j1 > j2:
-            j = (j2-j1)/(i2-i1)*(i-i1)+j1+1
-        else:
-            j = (j2-j1)/(i2-i1)*(i-i1)+j1
+    #if abs(i2-i1) == abs(j2-j1):
+    #    if i1 > i2:
+    #        i1,j1,i2,j2 = i2,j2,i1,j1
+    #    i = np.arange(i1,i2+1)
+    #    if j1 > j2:
+    #        j = (j2-j1)/(i2-i1)*(i-i1)+j1+1
+    #    else:
+    #        j = (j2-j1)/(i2-i1)*(i-i1)+j1
                    
-    elif abs(i2-i1) >= abs(j2-j1):
+    if abs(i2-i1) >= abs(j2-j1):
         if i1 > i2:
             i1,j1,i2,j2 = i2,j2,i1,j1
-        i = np.arange(i1+1,i2+1)
+        i = np.arange(i1,i2+1)
         j = (j2-j1)/(i2-i1)*(i-i1)+j1
     else:
         if j1 > j2:
             i1,j1,i2,j2 = i2,j2,i1,j1
-        j = np.arange(j1+1,j2+1)
+        j = np.arange(j1,j2+1)
         i = (i2-i1)/(j2-j1)*(j-j1)+i1
     
     return np.ceil(i).astype(int),np.ceil(j).astype(int)
 
-def box_search(A,i,j,box_size):
+def branch_cut(residue,mask=None,max_box_size=None):
     """
-    Function for searching an n x n box around a point in a 2D array
-
-    Parameters
-    ----------
-    A : 2D array
-        Array to be searched
-    i,j : int
-        Coordinates of center of search box
-    box size : int
-        Size of search box 
-        
-    Returns
-    -------
-    edge : int
-        Integer indicating an edge, 0 = top edge, 1 = left edge, 2 = bottom edge, 3 = right edge
-
-    or
-
-    inds : array_like
-        2D array of coordinates of nonzero elements of A within search box
-
-    """
-    r = int((box_size-1)/2)
-
-    # Edge detection
-    edges = np.nonzero([i-r < 0, j-r < 0, i+r >= A.shape[0], j+r >= A.shape[1]])[0]
-    if edges.size:
-            return edges[0]
-    
-    # If no edge was found, return indices of all nonzero points in search box 
-    else:
-        inds = np.array(np.nonzero(A[i-r:i+r+1,j-r:j+r+1]))
-        inds += np.array([[i-r],[j-r]])
-        return inds
-        
-def branch_cut(residue,max_box_size=None):
-    """
-    Implementation of Goldstein algorithm for placing branch cuts on a set of phase residues
+    Implementation of Goldsteins algorithm for placing branch cuts on a set of phase residues
 
     Parameters
     ----------
     residue : array_like
         2D array of residues
+    mask : array_like
+        2D boolean array of edge mask 
     max_box_size : int
         Maximum size of seach box
 
@@ -112,8 +77,14 @@ def branch_cut(residue,max_box_size=None):
     balanced = np.zeros(residue.shape).astype(bool)
     #found_res = []
 
+    if mask is None:
+        mask = np.ones(residue.shape).astype(bool)
+
     if max_box_size is None:
         max_box_size = np.min(residue.shape)
+
+    # Place branch cut pixels in masked out areas
+    branch_cuts[np.invert(mask)] = True
 
     for i in range(residue.shape[0]):
         for j in range(residue.shape[1]):
@@ -131,59 +102,80 @@ def branch_cut(residue,max_box_size=None):
 
                 # Loop over box sizes
                 for box_size in range(3,max_box_size+2,2):
+                    
+                    r = int((box_size-1)/2) # Radius of search (Loop over den her i stedet?)
 
                     # Loop throuch list of active pixels
                     N = 0
                     while N < len(active_list):
 
-                        m,n = active_list[N] # Current active pixel
+                        ia,ja = active_list[N] # Current active pixel
 
-                        # Search box around active pixel for non-active residues
-                        res_inds = box_search(residue.astype(bool) & np.logical_not(active),m,n,box_size)
+                        # Loop over box pixels
+                        for ib in range(ia-r,ia+r+1):
+                            for jb in range(ja-r,ja+r+1):
 
-                        if type(res_inds) == np.ndarray: # No edge found
-                            
-                            # Loop over all found residues in search box
-                            for k in range(res_inds.shape[1]):
+                                # Detect edges
+                                if ib < 0:
+                                    branch_cuts[0:ia+1,ja] = True #Top edge
+                                    charge = 0
 
-                                p = tuple(res_inds[:,k])
+                                elif ib >= residue.shape[0]:
+                                    branch_cuts[ia+1:,ja] = True #Bottom edge
+                                    charge = 0
 
-                                # Mark found residue as balanced if not already
-                                if not balanced[p]:
-                                    charge += residue[p]
-                                    balanced[p] = True
+                                elif jb < 0:
+                                    branch_cuts[ia,0:ja+1] = True #Left edge
+                                    charge = 0
 
-                                # Mark residue as active and add to list of active pixels
-                                active[p] = True
-                                active_list.append(p)
+                                elif jb >= residue.shape[1]:
+                                    branch_cuts[ia,ja+1:] = True #Right edge
+                                    charge = 0
 
-                                # Place branch cut
-                                i_bc,j_bc = line(m,n,p[0],p[1])
-                                branch_cuts[i_bc,j_bc] = True
-                                #branch_cuts[i_bc,j_bc] += 1
-                                #found_res.append(p)
+                                elif not mask[ib,jb]:
+                                    # Place branch cut to edge pixel
+                                    i_bc,j_bc = line(ia,ja,ib,jb)
+                                    branch_cuts[i_bc,j_bc] = True
+                                    charge = 0
 
+                                elif residue[ib,jb] and not active[ib,jb]:
+
+                                    # Mark found residue as active
+                                    active[ib,jb] = True
+                                    active_list.append((ib,jb))
+
+                                    # Mark as balanced if not already 
+                                    if not balanced[ib,jb]:
+                                        charge += residue[ib,jb]
+                                        balanced[ib,jb] = True
+
+                                    # Place branch cut
+                                    i_bc,j_bc = line(ia,ja,ib,jb)
+                                    branch_cuts[i_bc,j_bc] = True
                                 if not charge:
                                     break
-                        else: # Edge found
-                            if res_inds == 0:
-                                branch_cuts[0:m+1,n] = True #Top edge
-                            elif res_inds == 1:
-                                branch_cuts[m,0:n+1] = True #Left edge
-                            elif res_inds == 2:
-                                branch_cuts[m+1:,n] = True #Bottom edge
-                            elif res_inds == 3:
-                                branch_cuts[m,n+1:] = True #Right edge
-                            charge = 0
-                        
+                            if not charge:
+                                break                                          
                         N += 1
                         if not charge:
                             break
 
                     if not charge:
                         break
+                
+                # If charge still nonzero place branch cut to border (max box size exceeded)
+                if charge:
+                    closest_edge = np.argmin([i,residue.shape[0]-i,j,residue.shape[1]-j])
+                    if closest_edge == 0:
+                        branch_cuts[0:ia+1,ja] = True #Top edge
+                    elif closest_edge == 1:
+                        branch_cuts[ia+1:,ja] = True #Bottom edge
+                    elif closest_edge == 2:
+                        branch_cuts[ia,0:ja+1] = True #Left edge
+                    elif closest_edge == 3:
+                        branch_cuts[ia,ja+1:] = True #Right edge
 
+                # Mark residue as balanced
                 balanced[i,j] = True
-
-                # TODO If charge still nonzero place branch cut to border (max box size exceeded)
+      
     return branch_cuts#, found_res
