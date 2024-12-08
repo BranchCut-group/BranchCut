@@ -9,6 +9,9 @@ Date: 15/11/2024
 
 # -- Third party --
 import numpy as np
+import sys
+sys.path.append('../')
+from branchcut.setup import wrap
 
 
 def createExample(unwrapped_baseline:  np.ndarray, add_image:  np.ndarray = None , mult_image:  np.ndarray = None, noise_sigma: float = 0.0, add_first: bool = True):
@@ -55,7 +58,7 @@ def createExample(unwrapped_baseline:  np.ndarray, add_image:  np.ndarray = None
         phase_unwrapped = unwrapped_baseline*mult_image + add_image + noise
     
     # wrapping
-    phase_wrapped = np.mod(phase_unwrapped, 2*np.pi)
+    phase_wrapped = wrap(phase_unwrapped)#np.mod(phase_unwrapped, 2*np.pi)
 
     return phase_unwrapped, phase_wrapped
 
