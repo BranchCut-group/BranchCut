@@ -64,7 +64,7 @@ def branch_cut(residue,mask=None,max_box_size=None):
     residue : array_like
         2D array of residues
     mask : array_like
-        2D boolean array of edge mask 
+        2D boolean array where 0 = edge pixels
     max_box_size : int
         Maximum size of seach box
 
@@ -103,7 +103,7 @@ def branch_cut(residue,mask=None,max_box_size=None):
                 # Loop over box sizes
                 for box_size in range(3,max_box_size+2,2):
                     
-                    r = int((box_size-1)/2) # Radius of search (Loop over den her i stedet?)
+                    r = int((box_size-1)/2) # Radius of search
 
                     # Loop throuch list of active pixels
                     N = 0
